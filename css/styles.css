@@ -919,6 +919,14 @@ body::before {
 
 .chart-container canvas {
   max-height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#capital-chart {
+  background: transparent !important;
+  display: block !important;
+  min-height: 350px !important;
 }
 
 /* Chart Legend */

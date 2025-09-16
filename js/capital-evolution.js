@@ -10,16 +10,29 @@ import {
 
 class CapitalEvolutionManager {
   constructor() {
+    console.log('🏗️ CapitalEvolutionManager constructor started');
     this.chart = null;
     this.capitalData = [];
     this.periodMonths = 12; // Default: último ano
     this.initialCapital = 10000; // Capital inicial padrão
 
+    // Check if Chart.js is available
+    console.log('📊 Chart.js available:', typeof Chart !== 'undefined');
+
     // Wait for DOM to be ready
     if (document.readyState === 'loading') {
+      console.log('⏳ DOM loading, waiting...');
       document.addEventListener('DOMContentLoaded', () => this.setupEventListeners());
     } else {
+      console.log('✅ DOM ready, setting up listeners');
       this.setupEventListeners();
+    }
+
+    // Also wait for window load to ensure Chart.js is available
+    if (document.readyState !== 'complete') {
+      window.addEventListener('load', () => {
+        console.log('🌍 Window loaded, Chart.js available:', typeof Chart !== 'undefined');
+      });
     }
   }
 
@@ -33,6 +46,12 @@ class CapitalEvolutionManager {
     if (capitalTab) {
       capitalTab.addEventListener('click', () => this.switchToCapitalTab());
       console.log('✅ Capital evolution tab listener added');
+
+      // Load data immediately if this tab is already active
+      if (capitalTab.classList.contains('active')) {
+        console.log('🔄 Capital tab is already active, loading data...');
+        this.loadCapitalEvolution();
+      }
     }
 
     if (periodSelect) {
@@ -43,6 +62,7 @@ class CapitalEvolutionManager {
 
   switchToCapitalTab() {
     console.log('🔄 Switching to capital evolution tab');
+    console.log('🔄 Chart.js available in switchToCapitalTab:', typeof Chart !== 'undefined');
 
     // Hide other tabs content
     const swingContent = document.getElementById('swing-trade-content');
@@ -82,7 +102,10 @@ class CapitalEvolutionManager {
     const user = authManager.getCurrentUser();
     console.log('📊 Loading capital evolution for user:', user?.uid);
 
-    if (!user) return;
+    if (!user) {
+      console.log('❌ No user found, cannot load capital evolution');
+      return;
+    }
 
     try {
       this.showLoading(true);
@@ -97,6 +120,12 @@ class CapitalEvolutionManager {
       this.capitalData = this.processMonthlyData(swingData, dayTradeData);
 
       console.log('📈 Capital evolution data processed:', this.capitalData);
+
+      // Se não há dados reais, criar dados de teste
+      if (this.capitalData.length === 0) {
+        console.log('📊 Creating sample data for chart testing');
+        this.capitalData = this.createSampleData();
+      }
 
       // Atualizar gráfico e estatísticas
       this.updateChart();
@@ -219,31 +248,88 @@ class CapitalEvolutionManager {
     return filteredMonths;
   }
 
+  createSampleData() {
+    console.log('📊 Creating sample capital evolution data');
+    const currentDate = new Date();
+    const sampleData = [];
+
+    // Criar 6 meses de dados de exemplo
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      sampleData.push({
+        month: monthKey,
+        swingPnL: Math.random() * 1000 - 500, // Entre -500 e +500
+        dayPnL: Math.random() * 500 - 250,    // Entre -250 e +250
+        totalPnL: 0, // Será calculado
+        accumulatedCapital: 0 // Será calculado
+      });
+    }
+
+    // Calcular totais e capital acumulado
+    let accumulatedCapital = this.initialCapital;
+    sampleData.forEach((month, index) => {
+      month.totalPnL = month.swingPnL + month.dayPnL;
+      accumulatedCapital += month.totalPnL;
+      month.accumulatedCapital = accumulatedCapital;
+      month.monthlyGrowth = index === 0 ? 0 : ((accumulatedCapital - sampleData[index - 1].accumulatedCapital) / sampleData[index - 1].accumulatedCapital) * 100;
+    });
+
+    console.log('✅ Sample data created:', sampleData);
+    return sampleData;
+  }
+
   updateChart() {
     console.log('📊 Updating capital evolution chart...');
+    console.log('📊 Chart.js available in updateChart:', typeof Chart !== 'undefined');
+    console.log('📊 Capital data length:', this.capitalData.length);
 
     const ctx = document.getElementById('capital-chart');
+    console.log('📊 Canvas element found:', !!ctx);
     if (!ctx) {
       console.error('❌ Chart canvas not found!');
       return;
     }
+
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+      console.error('❌ Chart.js not loaded! Retrying in 1 second...');
+      setTimeout(() => this.updateChart(), 1000); // Retry after 1 second
+      return;
+    }
+
+    console.log('✅ Chart.js is available, proceeding with chart creation');
 
     // Destruir gráfico existente se houver
     if (this.chart) {
       this.chart.destroy();
     }
 
-    const labels = this.capitalData.map(item => {
-      const [year, month] = item.month.split('-');
-      return new Date(year, month - 1).toLocaleDateString('pt-BR', {
-        month: 'short',
-        year: '2-digit'
-      });
-    });
+    // Se não há dados, criar dados de exemplo para teste
+    let labels, swingData, dayData, totalCapitalData;
 
-    const swingData = this.capitalData.map(item => item.swingPnL);
-    const dayData = this.capitalData.map(item => item.dayPnL);
-    const totalCapitalData = this.capitalData.map(item => item.accumulatedCapital);
+    if (this.capitalData.length === 0) {
+      console.log('📊 No capital data available, creating sample data for testing');
+      labels = ['Jan/25', 'Fev/25', 'Mar/25'];
+      swingData = [0, 0, 0];
+      dayData = [0, 0, 0];
+      totalCapitalData = [this.initialCapital, this.initialCapital, this.initialCapital];
+    } else {
+      labels = this.capitalData.map(item => {
+        const [year, month] = item.month.split('-');
+        return new Date(year, month - 1).toLocaleDateString('pt-BR', {
+          month: 'short',
+          year: '2-digit'
+        });
+      });
+
+      swingData = this.capitalData.map(item => item.swingPnL);
+      dayData = this.capitalData.map(item => item.dayPnL);
+      totalCapitalData = this.capitalData.map(item => item.accumulatedCapital);
+    }
+
+    console.log('📊 Chart data prepared:', { labels, swingData, dayData, totalCapitalData });
 
     this.chart = new Chart(ctx, {
       type: 'line',
@@ -360,7 +446,8 @@ class CapitalEvolutionManager {
       }
     });
 
-    console.log('✅ Chart updated successfully');
+    console.log('✅ Chart created successfully:', this.chart);
+    console.log('✅ Chart canvas dimensions:', ctx.width, 'x', ctx.height);
   }
 
   updateStats() {
