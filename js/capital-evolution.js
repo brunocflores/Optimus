@@ -50,7 +50,9 @@ class CapitalEvolutionManager {
       // Load data immediately if this tab is already active
       if (capitalTab.classList.contains('active')) {
         console.log('🔄 Capital tab is already active, loading data...');
-        this.loadCapitalEvolution();
+        setTimeout(() => {
+          this.loadCapitalEvolution();
+        }, 500); // Delay to ensure DOM is ready
       }
     }
 
@@ -82,8 +84,21 @@ class CapitalEvolutionManager {
     if (dayTab) dayTab.classList.remove('active');
     if (capitalTab) capitalTab.classList.add('active');
 
-    // Load capital evolution data
-    this.loadCapitalEvolution();
+    // Load capital evolution data after tab is visible
+    setTimeout(() => {
+      this.loadCapitalEvolution();
+    }, 100); // Small delay to ensure DOM is updated
+  }
+
+  recreateCanvas() {
+    console.log('🔨 Recreating canvas element...');
+    const chartContainer = document.querySelector('.chart-container');
+    if (chartContainer) {
+      chartContainer.innerHTML = '<canvas id="capital-chart"></canvas>';
+      console.log('✅ Canvas recreated');
+      // Try to update chart again after recreating canvas
+      setTimeout(() => this.updateChart(), 100);
+    }
   }
 
   changePeriod(period) {
@@ -280,15 +295,33 @@ class CapitalEvolutionManager {
     return sampleData;
   }
 
+  isReadyForChart() {
+    const capitalContent = document.getElementById('capital-evolution-content');
+    const isVisible = capitalContent && !capitalContent.classList.contains('hidden');
+    const hasCanvas = !!document.getElementById('capital-chart');
+    const hasChartJs = typeof Chart !== 'undefined';
+
+    console.log('📊 Chart readiness check:', { isVisible, hasCanvas, hasChartJs });
+    return isVisible && hasCanvas && hasChartJs;
+  }
+
   updateChart() {
     console.log('📊 Updating capital evolution chart...');
     console.log('📊 Chart.js available in updateChart:', typeof Chart !== 'undefined');
     console.log('📊 Capital data length:', this.capitalData.length);
 
+    // Check if everything is ready for chart creation
+    if (!this.isReadyForChart()) {
+      console.log('⏭️ Not ready for chart creation, skipping...');
+      return;
+    }
+
     const ctx = document.getElementById('capital-chart');
     console.log('📊 Canvas element found:', !!ctx);
+
     if (!ctx) {
-      console.error('❌ Chart canvas not found!');
+      console.error('❌ Chart canvas not found even after readiness check!');
+      this.recreateCanvas();
       return;
     }
 
@@ -486,9 +519,17 @@ class CapitalEvolutionManager {
     if (!chartContainer) return;
 
     if (loading) {
-      chartContainer.innerHTML = '<div class="loading-message" style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary);">Carregando evolução do capital...</div>';
+      // Only show loading if there's no canvas yet
+      const existingCanvas = document.getElementById('capital-chart');
+      if (!existingCanvas) {
+        chartContainer.innerHTML = '<div class="loading-message" style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary);">Carregando evolução do capital...</div>';
+      }
     } else {
-      chartContainer.innerHTML = '<canvas id="capital-chart"></canvas>';
+      // Ensure canvas exists
+      const existingCanvas = document.getElementById('capital-chart');
+      if (!existingCanvas) {
+        chartContainer.innerHTML = '<canvas id="capital-chart"></canvas>';
+      }
     }
   }
 
