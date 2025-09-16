@@ -2,7 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // TEMPORÁRIO - Permitir tudo para usuários autenticados (APENAS PARA DEBUG)
+    // TEMPORÁRIO - Permitir tudo para usuários autenticados (INCLUI DAY-TRADES)
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

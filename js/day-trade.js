@@ -255,15 +255,29 @@ class DayTradeManager {
         const data = doc.data();
         console.log('📄 Trade found:', doc.id, data);
 
-        // Filtrar por data manualmente se necessário
-        if (data.tradeDate >= startDate && data.tradeDate <= endDate) {
+        // Extrair ano e mês da data do trade para comparação
+        const tradeYear = data.tradeDate.slice(0, 4);
+        const tradeMonth = data.tradeDate.slice(5, 7);
+        const tradeYearMonth = `${tradeYear}-${tradeMonth}`;
+
+        const currentYearMonth = this.currentMonth;
+
+        console.log('📅 Date comparison:', {
+          tradeDate: data.tradeDate,
+          tradeYearMonth,
+          currentYearMonth,
+          matches: tradeYearMonth === currentYearMonth
+        });
+
+        // Comparar apenas ano e mês
+        if (tradeYearMonth === currentYearMonth) {
           this.trades.push({
             id: doc.id,
             ...data
           });
-          console.log('✅ Trade included (within date range)');
+          console.log('✅ Trade included (same month)');
         } else {
-          console.log('⏭️ Trade skipped (outside date range):', data.tradeDate);
+          console.log('⏭️ Trade skipped (different month):', tradeYearMonth, 'vs', currentYearMonth);
         }
       });
 
