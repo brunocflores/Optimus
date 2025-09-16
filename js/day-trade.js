@@ -58,8 +58,14 @@ class DayTradeManager {
     }
 
     if (addTradeForm) {
-      addTradeForm.addEventListener('submit', (e) => this.handleAddTrade(e));
+      console.log('🔗 Adding submit listener to form:', addTradeForm);
+      addTradeForm.addEventListener('submit', (e) => {
+        console.log('🚀 Form submitted, calling handleAddTrade');
+        this.handleAddTrade(e);
+      });
       console.log('✅ Add trade form listener added');
+    } else {
+      console.error('❌ Add trade form not found!');
     }
 
     if (closeTradeModal) {
@@ -92,6 +98,15 @@ class DayTradeManager {
     if (tradeDateInput) {
       tradeDateInput.valueAsDate = new Date();
     }
+
+    // Load trades automatically if day trade tab is already active
+    setTimeout(() => {
+      const dayTradeTab = document.getElementById('day-trade-tab');
+      if (dayTradeTab && dayTradeTab.classList.contains('active')) {
+        console.log('🔄 Day trade tab is active, loading trades automatically...');
+        this.loadDayTrades();
+      }
+    }, 1000);
   }
 
   switchTab(tab) {
@@ -114,6 +129,7 @@ class DayTradeManager {
       swingTradeContent.classList.add('hidden');
 
       // Load day trades when switching to day trade tab
+      console.log('🔄 Switching to day trade tab, loading trades...');
       this.loadDayTrades();
     }
   }
@@ -139,13 +155,32 @@ class DayTradeManager {
     e.preventDefault();
     console.log('📈 Adding day trade...');
 
-    const tradeDate = document.getElementById('trade-date').value;
-    const symbol = document.getElementById('trade-symbol').value.toUpperCase();
-    const operation = document.getElementById('trade-operation').value;
-    const result = parseFloat(document.getElementById('trade-result').value);
+    const tradeDateEl = document.getElementById('trade-date');
+    const symbolEl = document.getElementById('trade-symbol');
+    const operationEl = document.getElementById('trade-operation');
+    const resultEl = document.getElementById('trade-result');
     const submitBtn = e.target.querySelector('button[type="submit"]');
 
+    console.log('📋 Form elements found:', { tradeDateEl, symbolEl, operationEl, resultEl });
+
+    if (!tradeDateEl || !symbolEl || !operationEl || !resultEl) {
+      console.error('❌ Missing form elements!');
+      this.showMessage('Erro: Formulário incompleto', 'error');
+      return;
+    }
+
+    const tradeDate = tradeDateEl.value;
+    const symbol = symbolEl.value.toUpperCase();
+    const operation = operationEl.value;
+    const result = parseFloat(resultEl.value);
+
     console.log('📊 Trade data:', { tradeDate, symbol, operation, result });
+
+    if (!tradeDate || !symbol || !operation || isNaN(result)) {
+      console.error('❌ Invalid form data:', { tradeDate, symbol, operation, result });
+      this.showMessage('Por favor, preencha todos os campos corretamente', 'error');
+      return;
+    }
 
     try {
       this.setTradeButtonLoading(submitBtn, true);
@@ -166,7 +201,10 @@ class DayTradeManager {
       };
 
       console.log('💾 Saving trade data to Firestore:', tradeData);
-      await addDoc(collection(db, 'day-trades'), tradeData);
+      console.log('🔗 Database connection:', db);
+
+      const docRef = await addDoc(collection(db, 'day-trades'), tradeData);
+      console.log('✅ Trade saved successfully with ID:', docRef.id);
 
       this.hideAddTradeModal();
       this.showMessage(`Trade de ${symbol} adicionado com sucesso!`, 'success');
@@ -189,34 +227,80 @@ class DayTradeManager {
     try {
       this.setLoading(true);
 
+      // Se não há mês selecionado, use o mês atual
+      if (!this.currentMonth) {
+        this.currentMonth = new Date().toISOString().slice(0, 7);
+        const monthSelect = document.getElementById('month-select');
+        if (monthSelect) {
+          monthSelect.value = this.currentMonth;
+        }
+      }
+
       const startDate = this.currentMonth + '-01';
       const endDate = this.getEndOfMonth(this.currentMonth);
 
-      const q = query(
+      console.log('📅 Date range:', { startDate, endDate });
+
+      // Primeira tentativa: query com filtros de data
+      let q = query(
         collection(db, 'day-trades'),
-        where('userId', '==', user.uid),
-        where('tradeDate', '>=', startDate),
-        where('tradeDate', '<=', endDate)
+        where('userId', '==', user.uid)
       );
 
+      console.log('🔍 Executing query...');
       const querySnapshot = await getDocs(q);
       this.trades = [];
 
       querySnapshot.forEach((doc) => {
-        console.log('📄 Trade found:', doc.id, doc.data());
-        this.trades.push({
-          id: doc.id,
-          ...doc.data()
-        });
+        const data = doc.data();
+        console.log('📄 Trade found:', doc.id, data);
+
+        // Filtrar por data manualmente se necessário
+        if (data.tradeDate >= startDate && data.tradeDate <= endDate) {
+          this.trades.push({
+            id: doc.id,
+            ...data
+          });
+          console.log('✅ Trade included (within date range)');
+        } else {
+          console.log('⏭️ Trade skipped (outside date range):', data.tradeDate);
+        }
       });
 
-      console.log('✅ Day trades loaded:', this.trades.length, 'trades');
+      console.log('✅ Day trades loaded:', this.trades.length, 'trades for month', this.currentMonth);
       this.renderTrades();
       this.updateDayTradeStats();
 
     } catch (error) {
       console.error('❌ Error loading day trades:', error);
-      this.showMessage('Erro ao carregar trades: ' + error.message, 'error');
+      console.error('Error details:', error.code, error.message);
+
+      // Se houver erro na query com data, tente sem filtro de data
+      try {
+        console.log('🔄 Retrying without date filter...');
+        const simpleQuery = query(
+          collection(db, 'day-trades'),
+          where('userId', '==', user.uid)
+        );
+
+        const snapshot = await getDocs(simpleQuery);
+        this.trades = [];
+
+        snapshot.forEach((doc) => {
+          this.trades.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+
+        console.log('✅ Fallback query successful:', this.trades.length, 'trades');
+        this.renderTrades();
+        this.updateDayTradeStats();
+
+      } catch (fallbackError) {
+        console.error('❌ Fallback query failed:', fallbackError);
+        this.showMessage('Erro ao carregar trades: ' + fallbackError.message, 'error');
+      }
     } finally {
       this.setLoading(false);
     }
@@ -235,19 +319,29 @@ class DayTradeManager {
   }
 
   renderTrades() {
+    console.log('🎨 Rendering trades table...', this.trades.length, 'trades');
     const tableBody = document.getElementById('trades-table-body');
 
+    if (!tableBody) {
+      console.error('❌ Table body not found!');
+      return;
+    }
+
     if (this.trades.length === 0) {
+      console.log('📭 No trades to display');
       tableBody.innerHTML = '<tr><td colspan="5" class="loading-message">Nenhum trade encontrado para este período</td></tr>';
       return;
     }
 
     // Sort trades by date (newest first)
     const sortedTrades = this.trades.sort((a, b) => new Date(b.tradeDate) - new Date(a.tradeDate));
+    console.log('📊 Sorted trades:', sortedTrades);
 
     tableBody.innerHTML = sortedTrades.map(trade => {
       const resultClass = trade.result >= 0 ? 'trade-positive' : 'trade-negative';
       const resultPrefix = trade.result >= 0 ? '+' : '';
+
+      console.log('🏷️ Rendering trade:', trade.symbol, trade.result);
 
       return `
         <tr>
@@ -263,9 +357,12 @@ class DayTradeManager {
         </tr>
       `;
     }).join('');
+
+    console.log('✅ Table rendered successfully');
   }
 
   updateDayTradeStats() {
+    console.log('📈 Updating day trade statistics...', this.trades.length, 'trades');
     let totalPnL = 0;
     let totalTrades = this.trades.length;
     let winningTrades = 0;
@@ -275,15 +372,25 @@ class DayTradeManager {
       if (trade.result > 0) {
         winningTrades++;
       }
+      console.log('💰 Processing trade result:', trade.result);
     });
 
     const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
 
+    console.log('📊 Calculated stats:', { totalPnL, totalTrades, winningTrades, winRate });
+
     // Update stat cards
-    document.getElementById('day-trade-pnl').textContent = stockAPI.formatPrice(totalPnL);
-    document.getElementById('day-trade-ops').textContent = totalTrades.toString();
-    document.getElementById('day-trade-winrate').textContent = winRate.toFixed(1) + '%';
-    document.getElementById('month-result').textContent = stockAPI.formatPrice(totalPnL);
+    const pnlElement = document.getElementById('day-trade-pnl');
+    const opsElement = document.getElementById('day-trade-ops');
+    const winrateElement = document.getElementById('day-trade-winrate');
+    const monthElement = document.getElementById('month-result');
+
+    if (pnlElement) pnlElement.textContent = stockAPI.formatPrice(totalPnL);
+    if (opsElement) opsElement.textContent = totalTrades.toString();
+    if (winrateElement) winrateElement.textContent = winRate.toFixed(1) + '%';
+    if (monthElement) monthElement.textContent = stockAPI.formatPrice(totalPnL);
+
+    console.log('✅ Stats cards updated');
 
     // Update card styling based on positive/negative
     const pnlCard = document.getElementById('day-trade-pnl').closest('.stat-card');
