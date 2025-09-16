@@ -18,7 +18,13 @@ class PortfolioManager {
     this.portfolio = [];
     this.stockPrices = {};
     this.isLoading = false;
-    this.setupEventListeners();
+
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.setupEventListeners());
+    } else {
+      this.setupEventListeners();
+    }
   }
 
   setupEventListeners() {

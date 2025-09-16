@@ -11,7 +11,13 @@ class AuthManager {
   constructor() {
     this.currentUser = null;
     this.initializeAuthListeners();
-    this.setupEventListeners();
+
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.setupEventListeners());
+    } else {
+      this.setupEventListeners();
+    }
   }
 
   initializeAuthListeners() {
@@ -22,25 +28,51 @@ class AuthManager {
   }
 
   setupEventListeners() {
+    console.log('🔧 Setting up auth event listeners...');
+
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
     const showRegisterBtn = document.getElementById('show-register');
     const showLoginBtn = document.getElementById('show-login');
     const logoutBtn = document.getElementById('logout-btn');
 
-    loginForm?.addEventListener('submit', (e) => this.handleLogin(e));
-    registerForm?.addEventListener('submit', (e) => this.handleRegister(e));
-    showRegisterBtn?.addEventListener('click', (e) => this.showRegisterForm(e));
-    showLoginBtn?.addEventListener('click', (e) => this.showLoginForm(e));
-    logoutBtn?.addEventListener('click', (e) => this.handleLogout(e));
+    console.log('📋 Form elements found:', { loginForm, registerForm, showRegisterBtn, showLoginBtn, logoutBtn });
+
+    if (loginForm) {
+      loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+      console.log('✅ Login form listener added');
+    }
+
+    if (registerForm) {
+      registerForm.addEventListener('submit', (e) => this.handleRegister(e));
+      console.log('✅ Register form listener added');
+    }
+
+    if (showRegisterBtn) {
+      showRegisterBtn.addEventListener('click', (e) => this.showRegisterForm(e));
+      console.log('✅ Show register button listener added');
+    }
+
+    if (showLoginBtn) {
+      showLoginBtn.addEventListener('click', (e) => this.showLoginForm(e));
+      console.log('✅ Show login button listener added');
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', (e) => this.handleLogout(e));
+      console.log('✅ Logout button listener added');
+    }
   }
 
   async handleLogin(e) {
     e.preventDefault();
-    
+    console.log('🚀 Login form submitted!');
+
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const submitBtn = e.target.querySelector('button[type="submit"]');
+
+    console.log('📧 Login data:', { email, password: password ? '***' : 'empty' });
 
     try {
       this.setButtonLoading(submitBtn, true);
