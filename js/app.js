@@ -2,6 +2,7 @@ import authManager from './auth.js';
 import portfolioManager from './portfolio.js';
 import stockAPI from './stock-api.js';
 import dayTradeManager from './day-trade.js';
+import capitalEvolutionManager from './capital-evolution.js';
 
 class App {
   constructor() {

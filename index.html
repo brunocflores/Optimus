@@ -40,6 +40,7 @@
                 <nav class="nav-tabs">
                     <button id="swing-trade-tab" class="nav-tab active">Swing Trade</button>
                     <button id="day-trade-tab" class="nav-tab">Day Trade</button>
+                    <button id="capital-evolution-tab" class="nav-tab">Evolução do Capital</button>
                 </nav>
                 <button id="logout-btn" class="btn-secondary">Sair</button>
             </header>
@@ -152,6 +153,60 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Capital Evolution Section -->
+                <div id="capital-evolution-content" class="trade-content hidden">
+                    <div class="evolution-controls">
+                        <div class="period-filter">
+                            <label for="period-select">Período:</label>
+                            <select id="period-select" class="period-input">
+                                <option value="6">Últimos 6 meses</option>
+                                <option value="12" selected>Último ano</option>
+                                <option value="24">Últimos 2 anos</option>
+                                <option value="all">Todo período</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <div class="section-header">
+                            <h2>Evolução do Capital</h2>
+                            <div class="chart-stats">
+                                <span class="stat-item">
+                                    <span class="stat-label">Capital Inicial:</span>
+                                    <span id="initial-capital" class="stat-value">R$ 0,00</span>
+                                </span>
+                                <span class="stat-item">
+                                    <span class="stat-label">Capital Atual:</span>
+                                    <span id="current-capital" class="stat-value">R$ 0,00</span>
+                                </span>
+                                <span class="stat-item">
+                                    <span class="stat-label">Crescimento:</span>
+                                    <span id="capital-growth" class="stat-value">0%</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="chart-container">
+                            <canvas id="capital-chart"></canvas>
+                        </div>
+
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <div class="legend-color swing-trade"></div>
+                                <span>Swing Trade (P&L Realizado)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color day-trade"></div>
+                                <span>Day Trade (P&L Mensal)</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color total-capital"></div>
+                                <span>Capital Total Acumulado</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
 
@@ -221,8 +276,12 @@
         </div>
     </div>
 
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+
     <script type="module" src="js/app.js"></script>
-    
+
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

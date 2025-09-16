@@ -1,4 +1,4 @@
-const CACHE_NAME = 'portfolio-tracker-v2';
+const CACHE_NAME = 'optimus-trading-v4';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -6,6 +6,8 @@ const urlsToCache = [
   '/js/app.js',
   '/js/auth.js',
   '/js/portfolio.js',
+  '/js/day-trade.js',
+  '/js/capital-evolution.js',
   '/js/stock-api.js',
   '/js/firebase-config.js',
   '/manifest.json'
