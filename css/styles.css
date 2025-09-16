@@ -204,18 +204,26 @@ body::before {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
   margin-bottom: 3rem;
 }
 
 @media (min-width: 1200px) {
   .stats-grid {
     grid-template-columns: repeat(5, 1fr);
+    gap: 1.5rem;
   }
 }
 
-@media (max-width: 768px) {
+@media (min-width: 900px) and (max-width: 1199px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.2rem;
+  }
+}
+
+@media (max-width: 899px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
@@ -226,17 +234,50 @@ body::before {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+
+  .stat-card {
+    padding: 1rem 0.8rem;
+    min-height: 100px;
+  }
+
+  .stat-value {
+    font-size: 1.2rem;
+  }
+}
+
+/* Ajuste para valores muito longos */
+.stat-value {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Ajuste responsivo para valores longos */
+@media (max-width: 1199px) {
+  .stat-value {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 899px) {
+  .stat-value {
+    font-size: 1.1rem;
+  }
 }
 
 .stat-card {
   background: var(--bg-secondary);
   border: 2px solid var(--bg-tertiary);
   border-radius: var(--border-radius);
-  padding: 2rem;
+  padding: 1.5rem 1rem;
   text-align: center;
   transition: var(--transition);
   position: relative;
   overflow: hidden;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .stat-card::before {
@@ -279,24 +320,28 @@ body::before {
 }
 
 .stat-title {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 1px;
+  line-height: 1.2;
 }
 
 .stat-value {
   font-family: 'Orbitron', monospace;
-  font-size: 2rem;
+  font-size: 1.4rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
   color: var(--text-primary);
+  word-break: break-all;
+  line-height: 1.2;
 }
 
 .stat-change {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 500;
+  line-height: 1.2;
 }
 
 .stat-change.positive {
@@ -308,8 +353,11 @@ body::before {
 }
 
 .stat-subtitle {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
   margin-top: 0.5rem;
 }
 
