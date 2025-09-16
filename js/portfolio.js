@@ -1,16 +1,15 @@
 import { db } from './firebase-config.js';
 import authManager from './auth.js';
 import stockAPI from './stock-api.js';
-import { 
-  collection, 
-  doc, 
-  addDoc, 
-  getDocs, 
-  deleteDoc, 
-  updateDoc, 
-  query, 
-  where, 
-  orderBy 
+import {
+  collection,
+  doc,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  updateDoc,
+  query,
+  where
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 class PortfolioManager {
@@ -71,17 +70,22 @@ class PortfolioManager {
 
   async handleAddStock(e) {
     e.preventDefault();
-    
+    console.log('➕ Adding stock to portfolio...');
+
     const symbol = document.getElementById('stock-symbol').value.toUpperCase();
     const quantity = parseInt(document.getElementById('stock-quantity').value);
     const price = parseFloat(document.getElementById('stock-price').value);
     const date = document.getElementById('stock-date').value;
     const submitBtn = e.target.querySelector('button[type="submit"]');
-    
+
+    console.log('📊 Stock data:', { symbol, quantity, price, date });
+
     try {
       this.setButtonLoading(submitBtn, true);
-      
+
       const user = authManager.getCurrentUser();
+      console.log('👤 Current user:', user?.uid);
+
       if (!user) {
         throw new Error('Usuário não autenticado');
       }
@@ -95,15 +99,24 @@ class PortfolioManager {
         createdAt: new Date().toISOString()
       };
 
-      await addDoc(collection(db, 'portfolio'), stockData);
-      
+      console.log('💾 Saving stock data to Firestore:', stockData);
+      const docRef = await addDoc(collection(db, 'portfolio'), stockData);
+      console.log('✅ Stock added successfully with ID:', docRef.id);
+
       this.hideAddStockModal();
       this.showMessage('Ação adicionada com sucesso!', 'success');
       await this.loadPortfolio();
-      
+
     } catch (error) {
-      console.error('Error adding stock:', error);
-      this.showMessage('Erro ao adicionar ação', 'error');
+      console.error('❌ Error adding stock:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+
+      if (error.code === 'permission-denied') {
+        this.showMessage('Erro: Permissões do Firestore não configuradas', 'error');
+      } else {
+        this.showMessage('Erro ao adicionar ação: ' + error.message, 'error');
+      }
     } finally {
       this.setButtonLoading(submitBtn, false);
     }
@@ -111,34 +124,54 @@ class PortfolioManager {
 
   async loadPortfolio() {
     const user = authManager.getCurrentUser();
-    if (!user) return;
+    console.log('📊 Loading portfolio for user:', user?.uid);
+
+    if (!user) {
+      console.warn('❌ No user found, cannot load portfolio');
+      return;
+    }
 
     try {
       this.setLoading(true);
-      
+      console.log('🔄 Starting portfolio query...');
+
+      // Removendo orderBy temporariamente para debug
       const q = query(
         collection(db, 'portfolio'),
-        where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', user.uid)
       );
-      
+
+      console.log('📋 Executing Firestore query...');
       const querySnapshot = await getDocs(q);
+      console.log('📋 Query result - docs count:', querySnapshot.size);
+
       this.portfolio = [];
-      
+
       querySnapshot.forEach((doc) => {
+        console.log('📄 Document found:', doc.id, doc.data());
         this.portfolio.push({
           id: doc.id,
           ...doc.data()
         });
       });
 
+      console.log('✅ Portfolio loaded:', this.portfolio.length, 'items');
       await this.updateStockPrices();
       this.renderPortfolio();
       this.updateStats();
-      
+
     } catch (error) {
-      console.error('Error loading portfolio:', error);
-      this.showMessage('Erro ao carregar carteira', 'error');
+      console.error('❌ Error loading portfolio:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+
+      if (error.code === 'permission-denied') {
+        this.showMessage('Erro: Permissões do Firestore não configuradas', 'error');
+      } else if (error.code === 'failed-precondition') {
+        this.showMessage('Erro: Índice do Firestore necessário', 'error');
+      } else {
+        this.showMessage('Erro ao carregar carteira: ' + error.message, 'error');
+      }
     } finally {
       this.setLoading(false);
     }

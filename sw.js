@@ -1,4 +1,4 @@
-const CACHE_NAME = 'portfolio-tracker-v1';
+const CACHE_NAME = 'portfolio-tracker-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -8,9 +8,7 @@ const urlsToCache = [
   '/js/portfolio.js',
   '/js/stock-api.js',
   '/js/firebase-config.js',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/manifest.json'
 ];
 
 self.addEventListener('install', event => {
