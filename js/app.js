@@ -1,6 +1,7 @@
 import authManager from './auth.js';
 import portfolioManager from './portfolio.js';
 import stockAPI from './stock-api.js';
+import dayTradeManager from './day-trade.js';
 
 class App {
   constructor() {

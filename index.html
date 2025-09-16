@@ -37,50 +37,119 @@
         <div id="portfolio-screen" class="screen hidden">
             <header class="header">
                 <h1 class="logo">Optimus<span class="gradient-text">Trading</span></h1>
+                <nav class="nav-tabs">
+                    <button id="swing-trade-tab" class="nav-tab active">Swing Trade</button>
+                    <button id="day-trade-tab" class="nav-tab">Day Trade</button>
+                </nav>
                 <button id="logout-btn" class="btn-secondary">Sair</button>
             </header>
 
             <main class="main-content">
-                <div class="stats-grid">
-                    <div class="stat-card positive">
-                        <div class="stat-title">P&L Total</div>
-                        <div class="stat-value" id="total-pnl">R$ 0,00</div>
-                        <div class="stat-change" id="pnl-change">+0,00%</div>
+                <!-- Swing Trade Section -->
+                <div id="swing-trade-content" class="trade-content">
+                    <div class="stats-grid">
+                        <div class="stat-card positive">
+                            <div class="stat-title">P&L Total</div>
+                            <div class="stat-value" id="total-pnl">R$ 0,00</div>
+                            <div class="stat-change" id="pnl-change">+0,00%</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">P&L Realizado</div>
+                            <div class="stat-value" id="realized-pnl">R$ 0,00</div>
+                            <div class="stat-subtitle">Vendas Concluídas</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">Valor Investido</div>
+                            <div class="stat-value" id="total-invested">R$ 0,00</div>
+                            <div class="stat-subtitle">Capital Total</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">Ações em Carteira</div>
+                            <div class="stat-value" id="total-stocks">0</div>
+                            <div class="stat-subtitle">Posições Ativas</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">Valor Atual</div>
+                            <div class="stat-value" id="current-value">R$ 0,00</div>
+                            <div class="stat-subtitle">Patrimônio Total</div>
+                        </div>
                     </div>
 
-                    <div class="stat-card">
-                        <div class="stat-title">P&L Realizado</div>
-                        <div class="stat-value" id="realized-pnl">R$ 0,00</div>
-                        <div class="stat-subtitle">Vendas Concluídas</div>
-                    </div>
+                    <div class="portfolio-section">
+                        <div class="section-header">
+                            <h2>Minha Carteira</h2>
+                            <button id="add-stock-btn" class="btn-primary btn-small">+ Adicionar Ação</button>
+                        </div>
 
-                    <div class="stat-card">
-                        <div class="stat-title">Valor Investido</div>
-                        <div class="stat-value" id="total-invested">R$ 0,00</div>
-                        <div class="stat-subtitle">Capital Total</div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-title">Ações em Carteira</div>
-                        <div class="stat-value" id="total-stocks">0</div>
-                        <div class="stat-subtitle">Posições Ativas</div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-title">Valor Atual</div>
-                        <div class="stat-value" id="current-value">R$ 0,00</div>
-                        <div class="stat-subtitle">Patrimônio Total</div>
+                        <div id="portfolio-list" class="portfolio-list">
+                            <div class="loading-message">Carregando carteira...</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="portfolio-section">
-                    <div class="section-header">
-                        <h2>Minha Carteira</h2>
-                        <button id="add-stock-btn" class="btn-primary btn-small">+ Adicionar Ação</button>
+                <!-- Day Trade Section -->
+                <div id="day-trade-content" class="trade-content hidden">
+                    <div class="day-trade-controls">
+                        <div class="month-filter">
+                            <label for="month-select">Filtrar por mês:</label>
+                            <input type="month" id="month-select" class="month-input">
+                        </div>
                     </div>
-                    
-                    <div id="portfolio-list" class="portfolio-list">
-                        <div class="loading-message">Carregando carteira...</div>
+
+                    <div class="stats-grid day-trade-stats">
+                        <div class="stat-card">
+                            <div class="stat-title">P&L Realizado</div>
+                            <div class="stat-value" id="day-trade-pnl">R$ 0,00</div>
+                            <div class="stat-subtitle">Total do Período</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">Operações</div>
+                            <div class="stat-value" id="day-trade-ops">0</div>
+                            <div class="stat-subtitle">Total de Trades</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">Win/Loss</div>
+                            <div class="stat-value" id="day-trade-winrate">0%</div>
+                            <div class="stat-subtitle">Taxa de Acerto</div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-title">Resultado do Mês</div>
+                            <div class="stat-value" id="month-result">R$ 0,00</div>
+                            <div class="stat-subtitle">Performance Mensal</div>
+                        </div>
+                    </div>
+
+                    <div class="trades-section">
+                        <div class="section-header">
+                            <h2>Day Trades</h2>
+                            <button id="add-trade-btn" class="btn-primary btn-small">+ Adicionar Trade</button>
+                        </div>
+
+                        <div id="trades-table-container" class="trades-table-container">
+                            <table id="trades-table" class="trades-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Ativo</th>
+                                        <th>Operação</th>
+                                        <th>Resultado</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trades-table-body">
+                                    <tr>
+                                        <td colspan="5" class="loading-message">Nenhum trade encontrado para este período</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -123,6 +192,29 @@
                     <div class="modal-buttons">
                         <button type="button" id="cancel-sell" class="btn-secondary">Cancelar</button>
                         <button type="submit" class="btn-primary">Vender</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="add-trade-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Adicionar Day Trade</h3>
+                    <button id="close-trade-modal" class="close-btn">&times;</button>
+                </div>
+                <form id="add-trade-form">
+                    <input type="date" id="trade-date" required>
+                    <input type="text" id="trade-symbol" placeholder="Ativo (ex: PETR4)" required>
+                    <select id="trade-operation" required>
+                        <option value="">Selecione a operação</option>
+                        <option value="compra">Compra</option>
+                        <option value="venda">Venda</option>
+                    </select>
+                    <input type="number" id="trade-result" placeholder="Resultado (R$)" step="0.01" required>
+                    <div class="modal-buttons">
+                        <button type="button" id="cancel-trade" class="btn-secondary">Cancelar</button>
+                        <button type="submit" class="btn-primary">Adicionar Trade</button>
                     </div>
                 </form>
             </div>
