@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#000000">
-    <title>Portfolio Tracker</title>
+    <title>Optimus Trading</title>
     
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
@@ -16,7 +16,7 @@
     <div id="app">
         <div id="login-screen" class="screen">
             <div class="container">
-                <h1 class="logo">Portfolio<span class="gradient-text">Tracker</span></h1>
+                <h1 class="logo">Optimus<span class="gradient-text">Trading</span></h1>
                 <form id="login-form" class="auth-form">
                     <input type="email" id="email" placeholder="Email" required>
                     <input type="password" id="password" placeholder="Senha" required>
@@ -36,7 +36,7 @@
 
         <div id="portfolio-screen" class="screen hidden">
             <header class="header">
-                <h1 class="logo">Portfolio<span class="gradient-text">Tracker</span></h1>
+                <h1 class="logo">Optimus<span class="gradient-text">Trading</span></h1>
                 <button id="logout-btn" class="btn-secondary">Sair</button>
             </header>
 
@@ -47,19 +47,25 @@
                         <div class="stat-value" id="total-pnl">R$ 0,00</div>
                         <div class="stat-change" id="pnl-change">+0,00%</div>
                     </div>
-                    
+
+                    <div class="stat-card">
+                        <div class="stat-title">P&L Realizado</div>
+                        <div class="stat-value" id="realized-pnl">R$ 0,00</div>
+                        <div class="stat-subtitle">Vendas Concluídas</div>
+                    </div>
+
                     <div class="stat-card">
                         <div class="stat-title">Valor Investido</div>
                         <div class="stat-value" id="total-invested">R$ 0,00</div>
                         <div class="stat-subtitle">Capital Total</div>
                     </div>
-                    
+
                     <div class="stat-card">
                         <div class="stat-title">Ações em Carteira</div>
                         <div class="stat-value" id="total-stocks">0</div>
                         <div class="stat-subtitle">Posições Ativas</div>
                     </div>
-                    
+
                     <div class="stat-card">
                         <div class="stat-title">Valor Atual</div>
                         <div class="stat-value" id="current-value">R$ 0,00</div>
@@ -94,6 +100,29 @@
                     <div class="modal-buttons">
                         <button type="button" id="cancel-add" class="btn-secondary">Cancelar</button>
                         <button type="submit" class="btn-primary">Adicionar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="sell-stock-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Vender Ação</h3>
+                    <button id="close-sell-modal" class="close-btn">&times;</button>
+                </div>
+                <form id="sell-stock-form">
+                    <input type="text" id="sell-stock-symbol" placeholder="Código da Ação" readonly>
+                    <input type="number" id="sell-quantity" placeholder="Quantidade a Vender" step="1" min="1" required>
+                    <input type="number" id="sell-price" placeholder="Preço de Venda" step="0.01" min="0.01" required>
+                    <input type="date" id="sell-date" required>
+                    <div class="stock-info-display">
+                        <p>Quantidade disponível: <span id="available-quantity">0</span></p>
+                        <p>Preço médio de compra: <span id="avg-purchase-price">R$ 0,00</span></p>
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="button" id="cancel-sell" class="btn-secondary">Cancelar</button>
+                        <button type="submit" class="btn-primary">Vender</button>
                     </div>
                 </form>
             </div>

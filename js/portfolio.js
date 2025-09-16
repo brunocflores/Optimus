@@ -33,21 +33,43 @@ class PortfolioManager {
     const cancelAdd = document.getElementById('cancel-add');
     const modal = document.getElementById('add-stock-modal');
 
+    // Sell modal elements
+    const sellStockForm = document.getElementById('sell-stock-form');
+    const closeSellModal = document.getElementById('close-sell-modal');
+    const cancelSell = document.getElementById('cancel-sell');
+    const sellModal = document.getElementById('sell-stock-modal');
+
     addStockBtn?.addEventListener('click', () => this.showAddStockModal());
     addStockForm?.addEventListener('submit', (e) => this.handleAddStock(e));
     closeModal?.addEventListener('click', () => this.hideAddStockModal());
     cancelAdd?.addEventListener('click', () => this.hideAddStockModal());
-    
+
     modal?.addEventListener('click', (e) => {
       if (e.target === modal) {
         this.hideAddStockModal();
       }
     });
 
-    // Set default date to today
+    // Sell modal listeners
+    sellStockForm?.addEventListener('submit', (e) => this.handleSellStock(e));
+    closeSellModal?.addEventListener('click', () => this.hideSellStockModal());
+    cancelSell?.addEventListener('click', () => this.hideSellStockModal());
+
+    sellModal?.addEventListener('click', (e) => {
+      if (e.target === sellModal) {
+        this.hideSellStockModal();
+      }
+    });
+
+    // Set default dates to today
     const dateInput = document.getElementById('stock-date');
     if (dateInput) {
       dateInput.valueAsDate = new Date();
+    }
+
+    const sellDateInput = document.getElementById('sell-date');
+    if (sellDateInput) {
+      sellDateInput.valueAsDate = new Date();
     }
   }
 
@@ -61,10 +83,32 @@ class PortfolioManager {
     const modal = document.getElementById('add-stock-modal');
     modal.classList.add('hidden');
     document.getElementById('add-stock-form').reset();
-    
+
     const dateInput = document.getElementById('stock-date');
     if (dateInput) {
       dateInput.valueAsDate = new Date();
+    }
+  }
+
+  showSellStockModal(symbol, availableQuantity, avgPrice) {
+    const modal = document.getElementById('sell-stock-modal');
+    document.getElementById('sell-stock-symbol').value = symbol;
+    document.getElementById('available-quantity').textContent = availableQuantity;
+    document.getElementById('avg-purchase-price').textContent = stockAPI.formatPrice(avgPrice);
+    document.getElementById('sell-quantity').max = availableQuantity;
+
+    modal.classList.remove('hidden');
+    document.getElementById('sell-quantity').focus();
+  }
+
+  hideSellStockModal() {
+    const modal = document.getElementById('sell-stock-modal');
+    modal.classList.add('hidden');
+    document.getElementById('sell-stock-form').reset();
+
+    const sellDateInput = document.getElementById('sell-date');
+    if (sellDateInput) {
+      sellDateInput.valueAsDate = new Date();
     }
   }
 
@@ -159,6 +203,7 @@ class PortfolioManager {
       await this.updateStockPrices();
       this.renderPortfolio();
       this.updateStats();
+      await this.updateRealizedPnL();
 
     } catch (error) {
       console.error('❌ Error loading portfolio:', error);
@@ -252,6 +297,9 @@ class PortfolioManager {
           </div>
           
           <div class="stock-actions">
+            <button class="btn-primary btn-small" onclick="portfolioManager.sellStock('${symbol}', ${totalQuantity}, ${avgPrice})">
+              Vender
+            </button>
             <button class="btn-secondary btn-small" onclick="portfolioManager.removeStock('${symbol}')">
               Remover
             </button>
@@ -342,6 +390,122 @@ class PortfolioManager {
     }
   }
 
+  sellStock(symbol, availableQuantity, avgPrice) {
+    this.showSellStockModal(symbol, availableQuantity, avgPrice);
+  }
+
+  async handleSellStock(e) {
+    e.preventDefault();
+    console.log('💰 Selling stock...');
+
+    const symbol = document.getElementById('sell-stock-symbol').value;
+    const quantityToSell = parseInt(document.getElementById('sell-quantity').value);
+    const sellPrice = parseFloat(document.getElementById('sell-price').value);
+    const sellDate = document.getElementById('sell-date').value;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+
+    console.log('📊 Sell data:', { symbol, quantityToSell, sellPrice, sellDate });
+
+    try {
+      this.setSellButtonLoading(submitBtn, true);
+
+      const user = authManager.getCurrentUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Get current stocks for this symbol
+      const symbolStocks = this.portfolio.filter(stock => stock.symbol === symbol);
+      let remainingToSell = quantityToSell;
+      let totalCostBasis = 0;
+
+      // Calculate average purchase price for sold quantity using FIFO
+      symbolStocks.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+      for (const stock of symbolStocks) {
+        if (remainingToSell <= 0) break;
+
+        const sellFromThis = Math.min(remainingToSell, stock.quantity);
+        totalCostBasis += sellFromThis * stock.purchasePrice;
+
+        if (sellFromThis === stock.quantity) {
+          // Remove entire position
+          await deleteDoc(doc(db, 'portfolio', stock.id));
+        } else {
+          // Update remaining quantity
+          await updateDoc(doc(db, 'portfolio', stock.id), {
+            quantity: stock.quantity - sellFromThis
+          });
+        }
+
+        remainingToSell -= sellFromThis;
+      }
+
+      // Calculate realized P&L
+      const avgPurchasePrice = totalCostBasis / quantityToSell;
+      const realizedPnL = (sellPrice - avgPurchasePrice) * quantityToSell;
+
+      // Save sale record
+      const saleData = {
+        userId: user.uid,
+        symbol: symbol,
+        quantity: quantityToSell,
+        purchasePrice: avgPurchasePrice,
+        sellPrice: sellPrice,
+        sellDate: sellDate,
+        realizedPnL: realizedPnL,
+        createdAt: new Date().toISOString(),
+        type: 'sale'
+      };
+
+      console.log('💾 Saving sale data to Firestore:', saleData);
+      await addDoc(collection(db, 'transactions'), saleData);
+
+      this.hideSellStockModal();
+      this.showMessage(`${quantityToSell} ações de ${symbol} vendidas com sucesso!`, 'success');
+      await this.loadPortfolio();
+      await this.updateRealizedPnL();
+
+    } catch (error) {
+      console.error('❌ Error selling stock:', error);
+      this.showMessage('Erro ao vender ação: ' + error.message, 'error');
+    } finally {
+      this.setSellButtonLoading(submitBtn, false);
+    }
+  }
+
+  async updateRealizedPnL() {
+    const user = authManager.getCurrentUser();
+    if (!user) return;
+
+    try {
+      const q = query(
+        collection(db, 'transactions'),
+        where('userId', '==', user.uid),
+        where('type', '==', 'sale')
+      );
+
+      const querySnapshot = await getDocs(q);
+      let totalRealizedPnL = 0;
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        totalRealizedPnL += data.realizedPnL || 0;
+      });
+
+      document.getElementById('realized-pnl').textContent = stockAPI.formatPrice(totalRealizedPnL);
+
+      // Update card styling based on positive/negative
+      const realizedCard = document.getElementById('realized-pnl').closest('.stat-card');
+      if (realizedCard) {
+        realizedCard.className = `stat-card ${totalRealizedPnL >= 0 ? 'positive' : 'negative'}`;
+      }
+
+    } catch (error) {
+      console.error('Error updating realized P&L:', error);
+    }
+  }
+
   setButtonLoading(button, loading) {
     if (loading) {
       button.disabled = true;
@@ -350,6 +514,18 @@ class PortfolioManager {
     } else {
       button.disabled = false;
       button.textContent = 'Adicionar';
+      button.classList.remove('loading');
+    }
+  }
+
+  setSellButtonLoading(button, loading) {
+    if (loading) {
+      button.disabled = true;
+      button.textContent = 'Vendendo...';
+      button.classList.add('loading');
+    } else {
+      button.disabled = false;
+      button.textContent = 'Vender';
       button.classList.remove('loading');
     }
   }

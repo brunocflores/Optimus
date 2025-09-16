@@ -204,9 +204,28 @@ body::before {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
   margin-bottom: 3rem;
+}
+
+@media (min-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .stat-card {
@@ -549,4 +568,39 @@ body::before {
   color: var(--neon-green);
   text-align: center;
   box-shadow: var(--shadow-neon) var(--neon-green);
+}
+
+/* Sell modal styles */
+.stock-info-display {
+  background: var(--bg-tertiary);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  margin: 1rem 0;
+  border: 1px solid var(--neon-cyan);
+}
+
+.stock-info-display p {
+  margin: 0.5rem 0;
+  color: var(--text-secondary);
+}
+
+.stock-info-display span {
+  color: var(--neon-cyan);
+  font-weight: 500;
+}
+
+.stock-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .stock-actions {
+    flex-direction: column;
+  }
+
+  .stock-actions button {
+    width: 100%;
+  }
 }

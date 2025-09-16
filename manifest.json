@@ -1,7 +1,7 @@
 {
-  "name": "Portfolio Tracker",
-  "short_name": "Portfolio",
-  "description": "Acompanhe sua carteira de ações em tempo real",
+  "name": "Optimus Trading",
+  "short_name": "Optimus",
+  "description": "Sistema profissional de trading e análise de ações",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",

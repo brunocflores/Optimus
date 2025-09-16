@@ -8,7 +8,7 @@ class App {
   }
 
   async init() {
-    console.log('🚀 Portfolio Tracker PWA iniciando...');
+    console.log('🚀 Optimus Trading PWA iniciando...');
     
     this.setupGlobalErrorHandling();
     this.setupOfflineDetection();
@@ -122,7 +122,7 @@ class App {
     installBanner.className = 'install-banner';
     installBanner.innerHTML = `
       <div class="install-content">
-        <span>📱 Instalar Portfolio Tracker para acesso rápido?</span>
+        <span>📱 Instalar Optimus Trading para acesso rápido?</span>
         <div class="install-actions">
           <button id="install-yes" class="btn-primary btn-small">Instalar</button>
           <button id="install-no" class="btn-secondary btn-small">Depois</button>
