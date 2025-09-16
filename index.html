@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <title>Portfolio Tracker</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <div id="login-screen" class="screen">
+            <div class="container">
+                <h1 class="logo">Portfolio<span class="gradient-text">Tracker</span></h1>
+                <form id="login-form" class="auth-form">
+                    <input type="email" id="email" placeholder="Email" required>
+                    <input type="password" id="password" placeholder="Senha" required>
+                    <button type="submit" class="btn-primary">Entrar</button>
+                    <p class="auth-switch">Não tem conta? <a href="#" id="show-register">Registrar</a></p>
+                </form>
+                
+                <form id="register-form" class="auth-form hidden">
+                    <input type="text" id="register-name" placeholder="Nome" required>
+                    <input type="email" id="register-email" placeholder="Email" required>
+                    <input type="password" id="register-password" placeholder="Senha" required>
+                    <button type="submit" class="btn-primary">Registrar</button>
+                    <p class="auth-switch">Já tem conta? <a href="#" id="show-login">Entrar</a></p>
+                </form>
+            </div>
+        </div>
+
+        <div id="portfolio-screen" class="screen hidden">
+            <header class="header">
+                <h1 class="logo">Portfolio<span class="gradient-text">Tracker</span></h1>
+                <button id="logout-btn" class="btn-secondary">Sair</button>
+            </header>
+
+            <main class="main-content">
+                <div class="stats-grid">
+                    <div class="stat-card positive">
+                        <div class="stat-title">P&L Total</div>
+                        <div class="stat-value" id="total-pnl">R$ 0,00</div>
+                        <div class="stat-change" id="pnl-change">+0,00%</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-title">Valor Investido</div>
+                        <div class="stat-value" id="total-invested">R$ 0,00</div>
+                        <div class="stat-subtitle">Capital Total</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-title">Ações em Carteira</div>
+                        <div class="stat-value" id="total-stocks">0</div>
+                        <div class="stat-subtitle">Posições Ativas</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-title">Valor Atual</div>
+                        <div class="stat-value" id="current-value">R$ 0,00</div>
+                        <div class="stat-subtitle">Patrimônio Total</div>
+                    </div>
+                </div>
+
+                <div class="portfolio-section">
+                    <div class="section-header">
+                        <h2>Minha Carteira</h2>
+                        <button id="add-stock-btn" class="btn-primary btn-small">+ Adicionar Ação</button>
+                    </div>
+                    
+                    <div id="portfolio-list" class="portfolio-list">
+                        <div class="loading-message">Carregando carteira...</div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div id="add-stock-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Adicionar Ação</h3>
+                    <button id="close-modal" class="close-btn">&times;</button>
+                </div>
+                <form id="add-stock-form">
+                    <input type="text" id="stock-symbol" placeholder="Código da Ação (ex: PETR4)" required>
+                    <input type="number" id="stock-quantity" placeholder="Quantidade" step="1" min="1" required>
+                    <input type="number" id="stock-price" placeholder="Preço de Compra" step="0.01" min="0.01" required>
+                    <input type="date" id="stock-date" required>
+                    <div class="modal-buttons">
+                        <button type="button" id="cancel-add" class="btn-secondary">Cancelar</button>
+                        <button type="submit" class="btn-primary">Adicionar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/portfolio.js"></script>
+    <script src="js/stock-api.js"></script>
+    <script src="js/app.js"></script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(registrationError => console.log('SW registration failed'));
+            });
+        }
+    </script>
+</body>
+</html>
