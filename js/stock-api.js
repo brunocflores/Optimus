@@ -3,9 +3,9 @@ import apiConfig from './api-config.js';
 class StockAPI {
   constructor() {
     this.updateInterval = null;
-    this.updateFrequency = 30000; // 30 seconds
+    this.updateFrequency = 600000; // 10 minutes (600 seconds) - Updated per request
     this.cache = new Map();
-    this.cacheExpiry = 15000; // 15 seconds (local cache)
+    this.cacheExpiry = 600000; // 10 minutes (local cache - aligned with backend)
     this.apiConfig = apiConfig;
     
     // Test API connectivity on initialization
@@ -16,9 +16,10 @@ class StockAPI {
     const cacheKey = symbol.toUpperCase();
     const cached = this.cache.get(cacheKey);
     
-    // Check local cache first
+    // Check local cache first (10 minute cache)
     if (cached && Date.now() - cached.timestamp < this.cacheExpiry) {
-      console.log(`📦 Using cached data for ${symbol}`);
+      const ageMinutes = Math.floor((Date.now() - cached.timestamp) / 60000);
+      console.log(`📦 Using cached data for ${symbol} (age: ${ageMinutes}min)`);
       return cached.data;
     }
 
@@ -86,7 +87,7 @@ class StockAPI {
         throw new Error('Invalid price data from API');
       }
       
-      console.log(`✅ Python API success: ${symbol} = R$ ${data.price.toFixed(2)} (${data.changePercent >= 0 ? '+' : ''}${data.changePercent.toFixed(2)}%)`);
+      console.log(`✅ Python API success: ${symbol} = R$ ${data.price.toFixed(2)} (${data.changePercent >= 0 ? '+' : ''}${data.changePercent.toFixed(2)}%) - yfinance 0.2.66`);
       
       return {
         symbol: data.symbol,
@@ -96,7 +97,7 @@ class StockAPI {
         currency: data.currency || 'BRL',
         timestamp: Date.now(),
         isMocked: false,
-        source: data.source || 'Python API + yfinance'
+        source: data.source || 'Python API + yfinance 0.2.66'
       };
       
     } catch (error) {
@@ -254,12 +255,15 @@ class StockAPI {
   }
 
   async getMultipleStockPrices(symbols) {
-    // Option 1: Use our Python API's batch endpoint (more efficient)
+    console.log(`🎯 Fetching data for ${symbols.length} portfolio symbols only`);
+
+    // Option 1: Use our Python API's batch endpoint (more efficient for portfolio)
     if (symbols.length > 3) {
       try {
         console.log(`🐍 Fetching ${symbols.length} symbols via batch API...`);
         
         const symbolsParam = symbols.map(s => s.toUpperCase()).join(',');
+        console.log(`📊 Batch request for portfolio symbols: ${symbolsParam}`);
         const apiUrl = this.apiConfig.getAPIUrl(`/api/stocks?symbols=${symbolsParam}`);
         
         const response = await fetch(apiUrl, {

@@ -226,6 +226,7 @@ class PortfolioManager {
     if (this.portfolio.length === 0) return;
 
     const symbols = [...new Set(this.portfolio.map(stock => stock.symbol))];
+    console.log(`🎯 Buscando cotações apenas para ações da carteira: ${symbols.join(', ')} (${symbols.length} símbolos)`);
 
     try {
       if (forceRefresh) {
