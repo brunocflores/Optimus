@@ -1,4 +1,4 @@
-const CACHE_NAME = 'optimus-trading-v4';
+const CACHE_NAME = 'optimus-trading-v5';
 const urlsToCache = [
   '/',
   '/index.html',

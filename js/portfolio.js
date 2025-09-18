@@ -222,17 +222,29 @@ class PortfolioManager {
     }
   }
 
-  async updateStockPrices() {
+  async updateStockPrices(forceRefresh = false) {
     if (this.portfolio.length === 0) return;
 
     const symbols = [...new Set(this.portfolio.map(stock => stock.symbol))];
-    
+
     try {
+      if (forceRefresh) {
+        stockAPI.clearCache();
+        console.log('🔄 Forçando atualização de cotações...');
+      }
+
       this.stockPrices = await stockAPI.getMultipleStockPrices(symbols);
       stockAPI.startRealTimeUpdates(() => this.handlePriceUpdate());
     } catch (error) {
       console.error('Error updating stock prices:', error);
     }
+  }
+
+  async forceRefreshPrices() {
+    await this.updateStockPrices(true);
+    this.renderPortfolio();
+    this.updateStats();
+    console.log('✅ Cotações atualizadas com valores exatos');
   }
 
   async handlePriceUpdate() {
