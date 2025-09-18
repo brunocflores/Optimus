@@ -33,29 +33,6 @@ class APIConfig {
       console.log(`📡 Production API URL updated: ${newURL}`);
     }
   }
-  
-  // Test API connectivity
-  async testConnectivity() {
-    try {
-      const response = await fetch(this.getAPIUrl('/api/health'), {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ API connectivity test successful:', data);
-        return { success: true, data };
-      } else {
-        throw new Error(`HTTP ${response.status}`);
-      }
-    } catch (error) {
-      console.error('❌ API connectivity test failed:', error);
-      return { success: false, error: error.message };
-    }
-  }
 }
 
 // Create and export singleton instance
