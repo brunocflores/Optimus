@@ -1,12 +1,36 @@
-from flask import Flask, jsonify, request
+# from flask import Flask, jsonify, request
 import yfinance as yf
 import logging
 from datetime import datetime, timedelta
 import os
 import time
 import random
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-app = Flask(__name__)
+app = FastAPI()
+
+# Lista de origens permitidas
+origins = [
+    "https://brunocflores.github.io",
+    # Você pode adicionar outras origens se precisar, como o localhost para testes
+    # "http://localhost",
+    # "http://localhost:8080",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"], # Permite todos os métodos (GET, POST, etc.)
+    allow_headers=["*"], # Permite todos os cabeçalhos
+)
+
+# ... resto do seu código da API, com as rotas @app.get, @app.post, etc.
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok"}
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
