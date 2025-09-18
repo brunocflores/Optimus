@@ -1,49 +1,44 @@
+import apiConfig from './api-config.js';
+
 class StockAPI {
   constructor() {
     this.updateInterval = null;
     this.updateFrequency = 30000; // 30 seconds
     this.cache = new Map();
-    this.cacheExpiry = 15000; // 15 seconds (cache otimizado)
+    this.cacheExpiry = 15000; // 15 seconds (local cache)
+    this.apiConfig = apiConfig;
+    
+    // Test API connectivity on initialization
+    this.testAPIConnection();
   }
 
   async getStockPrice(symbol) {
     const cacheKey = symbol.toUpperCase();
     const cached = this.cache.get(cacheKey);
     
+    // Check local cache first
     if (cached && Date.now() - cached.timestamp < this.cacheExpiry) {
+      console.log(`📦 Using cached data for ${symbol}`);
       return cached.data;
     }
 
-    // Tentar APIs alternativas primeiro (mais confiáveis atualmente)
+    // Fetch from our Python API
     try {
-      const price = await this.fetchFromAlphaVantage(symbol);
+      const stockData = await this.fetchFromPythonAPI(symbol);
       
-      if (price) {
+      if (stockData) {
+        // Cache the successful result
         this.cache.set(cacheKey, {
-          data: price,
+          data: stockData,
           timestamp: Date.now()
         });
-        return price;
+        return stockData;
       }
     } catch (error) {
-      console.warn(`Alternative APIs failed for ${symbol}:`, error);
+      console.warn(`Python API failed for ${symbol}:`, error);
     }
 
-    // Yahoo Finance como backup (pode ter problemas CORS localmente)
-    try {
-      const price = await this.fetchFromYahooFinance(symbol);
-      
-      if (price) {
-        this.cache.set(cacheKey, {
-          data: price,
-          timestamp: Date.now()
-        });
-        return price;
-      }
-    } catch (error) {
-      console.warn(`Yahoo Finance failed for ${symbol}:`, error);
-    }
-
+    // Fallback to mock data only if API completely fails
     const mockPrice = this.generateMockPrice(symbol);
     this.cache.set(cacheKey, {
       data: mockPrice,
@@ -53,154 +48,84 @@ class StockAPI {
     return mockPrice;
   }
 
-  async fetchFromYahooFinance(symbol) {
+  async fetchFromPythonAPI(symbol) {
     try {
-      // Múltiplos proxies CORS para maior confiabilidade
-      const proxies = [
-        'https://api.allorigins.win/raw?url=',
-        'https://cors-anywhere.herokuapp.com/',
-        'https://thingproxy.freeboard.io/fetch/'
-      ];
+      console.log(`🐍 Fetching ${symbol} from Python API...`);
       
-      const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.SA`;
-      console.log(`📊 Trying Yahoo Finance for ${symbol}...`);
+      // Use our Python backend API
+      const apiUrl = this.apiConfig.getAPIUrl(`/api/stock/${symbol.toUpperCase()}`);
       
-      for (const proxy of proxies) {
-        try {
-          const response = await fetch(proxy + encodeURIComponent(yahooUrl), {
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-          });
-          
-          if (!response.ok) continue;
-          
-          const data = await response.json();
-          
-          if (data?.chart?.result?.[0]?.meta?.regularMarketPrice) {
-            const meta = data.chart.result[0].meta;
-            const price = meta.regularMarketPrice;
-            const previousClose = meta.previousClose || price;
-            const change = price - previousClose;
-            const changePercent = ((change / previousClose) * 100);
-            
-            console.log(`✅ Yahoo Finance success via ${proxy}: ${symbol} = R$ ${price.toFixed(2)} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`);
-            
-            return {
-              symbol: symbol,
-              price: parseFloat(price.toFixed(2)),
-              change: parseFloat(change.toFixed(2)),
-              changePercent: parseFloat(changePercent.toFixed(2)),
-              currency: 'BRL',
-              timestamp: Date.now(),
-              isMocked: false,
-              source: 'Yahoo Finance (Real)'
-            };
-          }
-        } catch (proxyError) {
-          console.warn(`Proxy ${proxy} failed:`, proxyError.message);
-          continue;
-        }
+      // Timeout of 10 seconds for API call
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      throw new Error('All proxies failed');
+      const data = await response.json();
+      
+      // Check if we got an error response
+      if (data.error) {
+        throw new Error(data.message || 'API returned error');
+      }
+      
+      // Validate the data structure
+      if (!data.price || typeof data.price !== 'number') {
+        throw new Error('Invalid price data from API');
+      }
+      
+      console.log(`✅ Python API success: ${symbol} = R$ ${data.price.toFixed(2)} (${data.changePercent >= 0 ? '+' : ''}${data.changePercent.toFixed(2)}%)`);
+      
+      return {
+        symbol: data.symbol,
+        price: data.price,
+        change: data.change || 0,
+        changePercent: data.changePercent || 0,
+        currency: data.currency || 'BRL',
+        timestamp: Date.now(),
+        isMocked: false,
+        source: data.source || 'Python API + yfinance'
+      };
       
     } catch (error) {
-      console.warn(`⚠️ Yahoo Finance completely failed for ${symbol}:`, error.message);
+      console.error(`❌ Python API failed for ${symbol}:`, error.message);
+      
+      // If it's a timeout error, provide specific message
+      if (error.name === 'AbortError') {
+        console.error(`⏰ API timeout for ${symbol} after 10 seconds`);
+      }
+      
       return null;
     }
   }
 
-  async fetchFromAlphaVantage(symbol) {
+  async testAPIConnection() {
     try {
-      console.log(`📊 Trying alternative APIs for ${symbol}...`);
+      console.log('🧪 Testing Python API connectivity...');
+      const result = await this.apiConfig.testConnectivity();
       
-      // Lista de APIs alternativas gratuitas (ordenadas por confiabilidade)
-      const apis = [
-        {
-          name: 'Brapi Finance',
-          url: `https://brapi.dev/api/quote/${symbol}?token=demo`,
-          parser: (data) => {
-            if (data?.results?.[0]) {
-              const stock = data.results[0];
-              return {
-                price: parseFloat(stock.regularMarketPrice),
-                change: parseFloat(stock.regularMarketChange || 0),
-                changePercent: parseFloat(stock.regularMarketChangePercent || 0)
-              };
-            }
-            return null;
-          }
-        },
-        {
-          name: 'Yahoo Finance Alt',
-          url: `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.SA`,
-          parser: (data) => {
-            if (data?.chart?.result?.[0]?.meta?.regularMarketPrice) {
-              const meta = data.chart.result[0].meta;
-              const price = meta.regularMarketPrice;
-              const previousClose = meta.previousClose || price;
-              const change = price - previousClose;
-              const changePercent = ((change / previousClose) * 100);
-              return {
-                price: parseFloat(price),
-                change: parseFloat(change),
-                changePercent: parseFloat(changePercent)
-              };
-            }
-            return null;
-          }
-        },
-        {
-          name: 'Investidor10 API',
-          url: `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://statusinvest.com.br/acao/getrevenue?code=${symbol}&type=0&trimestral=false`)}`,
-          parser: (data) => {
-            // API mais complexa, implementaremos se necessário
-            return null;
-          }
-        }
-      ];
-      
-      for (const api of apis) {
-        try {
-          const response = await fetch(api.url, {
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'Mozilla/5.0'
-            }
-          });
-          
-          if (!response.ok) continue;
-          
-          const data = await response.json();
-          const parsed = api.parser(data);
-          
-          if (parsed && parsed.price > 0) {
-            console.log(`✅ ${api.name} success: ${symbol} = R$ ${parsed.price.toFixed(2)} (${parsed.changePercent >= 0 ? '+' : ''}${parsed.changePercent.toFixed(2)}%)`);
-            
-            return {
-              symbol: symbol,
-              price: parseFloat(parsed.price.toFixed(2)),
-              change: parseFloat(parsed.change.toFixed(2)),
-              changePercent: parseFloat(parsed.changePercent.toFixed(2)),
-              currency: 'BRL',
-              timestamp: Date.now(),
-              isMocked: false,
-              source: `${api.name} (Real)`
-            };
-          }
-        } catch (apiError) {
-          console.warn(`${api.name} failed:`, apiError.message);
-          continue;
-        }
+      if (result.success) {
+        console.log('✅ Python API is online and responding');
+        return true;
+      } else {
+        console.error('❌ Python API connectivity test failed:', result.error);
+        return false;
       }
-      
-      throw new Error('All alternative APIs failed');
-      
     } catch (error) {
-      console.warn(`⚠️ All alternative APIs failed for ${symbol}:`, error.message);
-      return null;
+      console.error('❌ Failed to test API connectivity:', error);
+      return false;
     }
   }
 
@@ -329,6 +254,51 @@ class StockAPI {
   }
 
   async getMultipleStockPrices(symbols) {
+    // Option 1: Use our Python API's batch endpoint (more efficient)
+    if (symbols.length > 3) {
+      try {
+        console.log(`🐍 Fetching ${symbols.length} symbols via batch API...`);
+        
+        const symbolsParam = symbols.map(s => s.toUpperCase()).join(',');
+        const apiUrl = this.apiConfig.getAPIUrl(`/api/stocks?symbols=${symbolsParam}`);
+        
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.results) {
+            console.log(`✅ Batch API success: ${data.total_successful}/${data.total_requested} symbols`);
+            
+            // Cache all results
+            Object.entries(data.results).forEach(([symbol, stockData]) => {
+              this.cache.set(symbol, {
+                data: {
+                  ...stockData,
+                  timestamp: Date.now(),
+                  isMocked: false,
+                  source: stockData.source || 'Python API Batch'
+                },
+                timestamp: Date.now()
+              });
+            });
+            
+            return data.results;
+          }
+        }
+      } catch (error) {
+        console.warn('Batch API failed, falling back to individual requests:', error);
+      }
+    }
+    
+    // Option 2: Individual requests (fallback or for smaller batches)
+    console.log(`🔄 Fetching ${symbols.length} symbols individually...`);
+    
     const promises = symbols.map(symbol => this.getStockPrice(symbol));
     const results = await Promise.all(promises);
     
@@ -413,6 +383,110 @@ class StockAPI {
       status: 'Mercado Fechado',
       statusClass: 'negative'
     };
+  }
+
+  // Comprehensive API testing method
+  async testAPIs() {
+    console.log('🧪 Testing Python API and stock data retrieval...');
+    
+    const testSymbol = 'PETR4';
+    const results = {
+      api_health: null,
+      stock_data: null,
+      performance: {}
+    };
+    
+    // Test 1: API Health Check
+    try {
+      const start = Date.now();
+      const healthResult = await this.apiConfig.testConnectivity();
+      const time = Date.now() - start;
+      
+      results.api_health = {
+        status: healthResult.success ? 'success' : 'error',
+        time: time + 'ms',
+        data: healthResult.data || healthResult.error
+      };
+      
+      console.log(`${healthResult.success ? '✅' : '❌'} API Health: ${time}ms`);
+    } catch (error) {
+      results.api_health = { status: 'error', message: error.message };
+      console.log(`❌ API Health: ${error.message}`);
+    }
+    
+    // Test 2: Real Stock Data
+    try {
+      const start = Date.now();
+      const stockData = await this.getStockPrice(testSymbol);
+      const time = Date.now() - start;
+      
+      if (stockData && !stockData.isMocked) {
+        results.stock_data = {
+          status: 'success',
+          time: time + 'ms',
+          symbol: stockData.symbol,
+          price: stockData.price,
+          source: stockData.source,
+          is_real: !stockData.isMocked
+        };
+        console.log(`✅ Stock Data (${testSymbol}): R$ ${stockData.price} in ${time}ms`);
+      } else {
+        results.stock_data = {
+          status: 'fallback',
+          time: time + 'ms',
+          message: 'Using mock data',
+          is_real: false
+        };
+        console.log(`⚠️ Stock Data (${testSymbol}): Using fallback data`);
+      }
+    } catch (error) {
+      results.stock_data = { status: 'error', message: error.message };
+      console.log(`❌ Stock Data: ${error.message}`);
+    }
+    
+    // Test 3: Batch Request (if API is working)
+    if (results.api_health?.status === 'success') {
+      try {
+        const start = Date.now();
+        const batchData = await this.getMultipleStockPrices(['PETR4', 'VALE3', 'ITUB4']);
+        const time = Date.now() - start;
+        
+        const successCount = Object.keys(batchData).length;
+        results.batch_request = {
+          status: successCount > 0 ? 'success' : 'error',
+          time: time + 'ms',
+          symbols_requested: 3,
+          symbols_received: successCount
+        };
+        
+        console.log(`✅ Batch Request: ${successCount}/3 symbols in ${time}ms`);
+      } catch (error) {
+        results.batch_request = { status: 'error', message: error.message };
+        console.log(`❌ Batch Request: ${error.message}`);
+      }
+    }
+    
+    console.log('🧪 Complete API Test Results:', results);
+    return results;
+  }
+
+  // Quick test method for debugging
+  async quickTest() {
+    console.log('⚡ Quick API test...');
+    
+    try {
+      const result = await this.getStockPrice('PETR4');
+      if (result && !result.isMocked) {
+        console.log(`✅ Quick test success: PETR4 = R$ ${result.price} (${result.source})`);
+        return true;
+      } else {
+        console.log(`⚠️ Quick test: using fallback data`);
+        return false;
+      }
+    } catch (error) {
+      console.log(`❌ Quick test failed: ${error.message}`);
+      return false;
+    }
   }
 }
 
