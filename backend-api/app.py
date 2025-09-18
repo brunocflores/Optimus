@@ -12,7 +12,7 @@ app = FastAPI()
 
 # Lista de origens permitidas
 origins = [
-    "https://brunocflores.github.io",
+    "https://brunocflores.github.io/Optimus/",
     # Você pode adicionar outras origens se precisar, como o localhost para testes
     # "http://localhost",
     # "http://localhost:8080",
