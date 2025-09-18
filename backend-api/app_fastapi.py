@@ -20,6 +20,8 @@ app = FastAPI(
 
 # Define allowed origins
 origins = [
+    "https://brunocflores.github.io/Optimus",
+    "https://brunocflores.github.io/Optimus/",
     "https://brunocflores.github.io",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
