@@ -7,7 +7,7 @@ class APIConfig {
     // API Base URLs
     this.API_URLS = {
       // Production: Railway deployed API (update after deployment)
-      production: 'https://optimus-trading-api-production.up.railway.app',
+      production: 'https://optimus-production-8490.up.railway.app.app',
 
       // Development: Local FastAPI server
       development: 'http://localhost:5001',
