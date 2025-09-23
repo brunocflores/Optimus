@@ -191,20 +191,7 @@
                             <canvas id="capital-chart"></canvas>
                         </div>
 
-                        <div class="chart-legend">
-                            <div class="legend-item">
-                                <div class="legend-color swing-trade"></div>
-                                <span>Swing Trade (P&L Realizado)</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color day-trade"></div>
-                                <span>Day Trade (P&L Mensal)</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color total-capital"></div>
-                                <span>Capital Total Acumulado</span>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
             </main>
@@ -278,19 +265,45 @@
 
     <!-- Chart.js CDN - Load before modules -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/cdn.min.js"></script>
 
-    <!-- Wait for Chart.js to load before loading modules -->
+    <!-- Robust script loader -->
     <script>
-        window.addEventListener('load', () => {
-            console.log('📊 Chart.js loaded:', typeof Chart !== 'undefined');
-
-            // Load app module after Chart.js is available
-            import('./js/app.js').then(() => {
-                console.log('✅ App modules loaded');
+        function initializeApp() {
+            console.log('✅ All dependencies loaded. Initializing app...');
+            import('./js/app.js?v=' + new Date().getTime()).then(() => {
+                console.log('✅ App modules loaded successfully.');
             }).catch(error => {
                 console.error('❌ Error loading app modules:', error);
             });
+        }
+
+        function checkDependencies(callback, timeout = 10000, interval = 50) {
+            const startTime = Date.now();
+            
+            function poll() {
+                const chartJsLoaded = typeof Chart !== 'undefined';
+                const dateFnsLoaded = typeof window.dateFns !== 'undefined';
+
+                if (chartJsLoaded && dateFnsLoaded) {
+                    console.log('📊 Chart.js loaded:', chartJsLoaded);
+                    console.log('📅 date-fns loaded:', dateFnsLoaded);
+                    callback();
+                } else if (Date.now() - startTime > timeout) {
+                    console.error('❌ Dependency loading timed out.');
+                    console.error('📊 Chart.js loaded:', chartJsLoaded);
+                    console.error('📅 date-fns loaded:', dateFnsLoaded);
+                    alert('Falha ao carregar recursos essenciais. Por favor, recarregue a página.');
+                } else {
+                    setTimeout(poll, interval);
+                }
+            }
+            poll();
+        }
+
+        window.addEventListener('load', () => {
+            console.log('🚀 Window loaded. Checking dependencies...');
+            checkDependencies(initializeApp);
         });
     </script>
 

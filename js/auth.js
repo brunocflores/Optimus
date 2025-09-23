@@ -1,4 +1,5 @@
 import { auth } from './firebase-config.js';
+import app from './app.js'; // Import the app instance
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
@@ -131,7 +132,7 @@ class AuthManager {
     document.getElementById('login-form').classList.remove('hidden');
   }
 
-  handleAuthStateChange(user) {
+  async handleAuthStateChange(user) {
     const loginScreen = document.getElementById('login-screen');
     const portfolioScreen = document.getElementById('portfolio-screen');
 
@@ -139,6 +140,11 @@ class AuthManager {
       loginScreen.classList.add('hidden');
       portfolioScreen.classList.remove('hidden');
       
+      // Wait for the app to be fully initialized before loading data
+      console.log('⏳ [DEBUG] User is authenticated, waiting for app initialization...');
+      await app.initializationComplete;
+      console.log('✅ [DEBUG] App is initialized, proceeding to load portfolio.');
+
       if (window.portfolioManager) {
         window.portfolioManager.loadPortfolio();
       }
