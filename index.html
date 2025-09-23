@@ -190,13 +190,12 @@
                         <div class="chart-container">
                             <canvas id="capital-chart"></canvas>
                         </div>
-
-
                     </div>
                 </div>
             </main>
         </div>
 
+        <!-- Modals -->
         <div id="add-stock-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -263,12 +262,12 @@
         </div>
     </div>
 
-    <!-- Chart.js CDN - Load before modules -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/cdn.min.js"></script>
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
 
-    <!-- Robust script loader -->
-    <script>
+    <!-- Application Loader -->
+    <script type="module">
         function initializeApp() {
             console.log('✅ All dependencies loaded. Initializing app...');
             import('./js/app.js?v=' + new Date().getTime()).then(() => {
@@ -301,12 +300,14 @@
             poll();
         }
 
+        // Start checking after the window loads to ensure CDNs have had a chance to execute
         window.addEventListener('load', () => {
             console.log('🚀 Window loaded. Checking dependencies...');
             checkDependencies(initializeApp);
         });
     </script>
 
+    <!-- Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
