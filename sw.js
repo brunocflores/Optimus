@@ -10,22 +10,18 @@ const urlsToCache = [
   '/js/capital-evolution.js',
   '/js/stock-api.js',
   '/js/firebase-config.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/icons/icon-144x144.png',
+  '/icons/icon-192x192.png'
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log('Opened cache. Caching files individually for debugging.');
-      const promises = urlsToCache.map(url => {
-        return cache.add(url).catch(error => {
-          console.error(`Failed to cache URL: ${url}`, error);
-          // Don't let one failed file stop the whole cache process
-          return null;
-        });
-      });
-      return Promise.all(promises);
-    })
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('Opened cache');
+        return cache.addAll(urlsToCache);
+      })
   );
 });
 
