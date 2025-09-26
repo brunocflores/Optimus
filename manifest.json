@@ -2,7 +2,7 @@
   "name": "Optimus Trading",
   "short_name": "Optimus",
   "description": "Sistema profissional de trading e análise de ações",
-  "start_url": "/",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
